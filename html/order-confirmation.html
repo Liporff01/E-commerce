@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Confirmation - Elegance</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #e6c9a4;
+            --accent: #c45b3c;
+            --light: #f8f5f2;
+            --dark: #2a2a2a;
+            --success: #27ae60;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: var(--light);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .confirmation-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            text-align: center;
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        .success-icon {
+            font-size: 4rem;
+            color: var(--success);
+            margin-bottom: 20px;
+        }
+        
+        .confirmation-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.5rem;
+            color: var(--primary);
+            margin-bottom: 15px;
+        }
+        
+        .confirmation-message {
+            font-size: 1.1rem;
+            color: var(--dark);
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        
+        .order-details {
+            background: var(--light);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 30px 0;
+            text-align: left;
+        }
+        
+        .order-details h3 {
+            font-family: 'Playfair Display', serif;
+            color: var(--primary);
+            margin-bottom: 15px;
+        }
+        
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .detail-row:last-child {
+            border-bottom: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        
+        .actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 25px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #1e2a36;
+            transform: translateY(-2px);
+        }
+        
+        .btn-outline {
+            background: transparent;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+        }
+        
+        .btn-outline:hover {
+            background: var(--primary);
+            color: white;
+        }
+        
+        @media (max-width: 768px) {
+            .confirmation-container {
+                padding: 30px 20px;
+            }
+            
+            .confirmation-title {
+                font-size: 2rem;
+            }
+            
+            .actions {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="confirmation-container">
+        <div class="success-icon">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        
+        <h1 class="confirmation-title">Order Confirmed!</h1>
+        
+        <p class="confirmation-message">
+            Thank you for your purchase! Your order has been successfully placed and payment confirmed. 
+            You will receive an email confirmation shortly with your order details and tracking information.
+        </p>
+        
+        <div class="order-details" id="order-details">
+            <h3>Order Summary</h3>
+            <div class="detail-row">
+                <span>Order Number:</span>
+                <span id="order-number">Loading...</span>
+            </div>
+            <div class="detail-row">
+                <span>Order Date:</span>
+                <span id="order-date">Loading...</span>
+            </div>
+            <div class="detail-row">
+                <span>Total Amount:</span>
+                <span id="order-total">Loading...</span>
+            </div>
+            <div class="detail-row">
+                <span>Payment Status:</span>
+                <span style="color: var(--success);">Confirmed</span>
+            </div>
+        </div>
+        
+        <div class="actions">
+            <a href="/html/jewelry-product.html" class="btn btn-primary">
+                <i class="fas fa-shopping-bag"></i> Continue Shopping
+            </a>
+            <a href="/index.html" class="btn btn-outline">
+                <i class="fas fa-home"></i> Back to Home
+            </a>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get order details from URL parameters or localStorage
+            const urlParams = new URLSearchParams(window.location.search);
+            const orderRef = urlParams.get('ref');
+            
+            if (orderRef) {
+                // Display order details
+                document.getElementById('order-number').textContent = orderRef;
+                document.getElementById('order-date').textContent = new Date().toLocaleDateString();
+                
+                // Get order total from localStorage if available
+                const lastOrder = localStorage.getItem('lastOrderTotal');
+                if (lastOrder) {
+                    document.getElementById('order-total').textContent = `₦${parseFloat(lastOrder).toFixed(2)}`;
+                    localStorage.removeItem('lastOrderTotal'); // Clean up
+                }
+            } else {
+                // Redirect to home if no order reference
+                window.location.href = '/index.html';
+            }
+        });
+    </script>
+</body>
+</html>

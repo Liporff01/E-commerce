@@ -1,12 +1,6 @@
-        // API endpoints (replace with your actual backend endpoints)
-        const API_ENDPOINTS = {
-            PRODUCTS: '/api/products/home-decor',
-            CATEGORIES: '/api/categories/home-decor',
-            INVENTORY: '/api/inventory'
-        };
 
         // Paystack public key (replace with your live key)
-        const PAYSTACK_PUBLIC_KEY = 'pk_live_your_live_public_key_here';
+        const PAYSTACK_PUBLIC_KEY = 'pk_live_your_live_public_key_here'; // Replace with your actual key
 
         // EmailJS configuration (replace with your actual credentials)
         const EMAILJS_CONFIG = {
@@ -15,88 +9,57 @@
             USER_ID: 'user_id'
         };
 
-        // Generate demo home decor products with stock information
-        const generateDemoProducts = () => {
-            const products = [];
-            const categories = ["tableware", "decorative", "lighting", "textiles"];
-            const materials = ["Ceramic", "Wood", "Glass", "Metal", "Marble", "Cotton", "Wool", "Brass"];
-            const adjectives = ["Elegant", "Modern", "Vintage", "Minimalist", "Artisan", "Handcrafted", "Luxury", "Rustic", "Bohemian", "Coastal"];
-            const types = ["Vase", "Bowl", "Plate", "Candle Holder", "Lamp", "Pillow", "Rug", "Mirror", "Frame", "Sculpture"];
-            
-            // Preload home decor images from Unsplash
-            const imageUrls = [
-                "https://images.unsplash.com/photo-1586023492125-27a3dcaa17ef",
-                "https://images.unsplash.com/photo-1556020685-ae41abfc9365",
-                "https://images.unsplash.com/photo-1540932239986-30128078f3c5",
-                "https://images.unsplash.com/photo-1556159903-5b6a9a3e6b0f",
-                "https://images.unsplash.com/photo-1513694203232-719a280e022f",
-                "https://images.unsplash.com/photo-1493663284031-b7e3aaa4c4b9",
-                "https://images.unsplash.com/photo-1505842381624-c6b0579625a5",
-                "https://images.unsplash.com/photo-1505691938895-1758d7feb511",
-                "https://images.unsplash.com/photo-1513519245088-0e12902e5a38",
-                "https://images.unsplash.com/photo-1532581140115-3e355d1ed1de",
-                "https://images.unsplash.com/photo-1556228720-195a672e8a03",
-                "https://images.unsplash.com/photo-1511385348-a52b4a160dc2",
-                "https://images.unsplash.com/photo-1505692952040-d6f7c3aafa4a",
-                "https://images.unsplash.com/photo-1534349762230-e0cadf78f5da",
-                "https://images.unsplash.com/photo-1519710164239-da123dc03ef4",
-                "https://images.unsplash.com/photo-1507652313519-d4e9174996dd",
-                "https://images.unsplash.com/photo-1530026405186-1f3d0ff5acfa",
-                "https://images.unsplash.com/photo-1524758631624-e2822e304c36",
-                "https://images.unsplash.com/photo-1555041469-a586c61ea9bc",
-                "https://images.unsplash.com/photo-1560448204-603b3fc33ddc"
-            ];
-            
-            // Generate 200 products with stock information
-            for (let i = 1; i <= 200; i++) {
-                const category = categories[Math.floor(Math.random() * categories.length)];
-                const material = materials[Math.floor(Math.random() * materials.length)];
-                const adjective = adjectives[Math.floor(Math.random() * adjectives.length)];
-                const type = types[Math.floor(Math.random() * types.length)];
-                const price = (Math.floor(Math.random() * 300000) + 2000).toFixed(2);
-                const imageIndex = Math.floor(Math.random() * imageUrls.length);
-                
-                // Generate random stock quantity (0-50)
-                const stockQuantity = Math.floor(Math.random() * 51);
-                let stockStatus = 'in-stock';
-                
-                if (stockQuantity === 0) {
-                    stockStatus = 'out-of-stock';
-                } else if (stockQuantity <= 5) {
-                    stockStatus = 'low-stock';
-                }
-                
-                products.push({
-                    id: i,
-                    name: `${adjective} ${material} ${type}`,
-                    category: category,
-                    price: parseFloat(price),
-                    stock: stockQuantity,
-                    stockStatus: stockStatus,
-                    image: `${imageUrls[imageIndex]}?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=870&q=80`
-                });
-            }
-            
-            return products;
-        };
 
-        // Fetch products from backend API
+        // Fetch products from Xano API
         const fetchProducts = async () => {
             try {
-                // In a real application, you would fetch from your API
-                // const response = await fetch(API_ENDPOINTS.PRODUCTS);
-                // const data = await response.json();
-                // return data.products;
-                
-                // For demo purposes, we'll simulate an API failure
-                throw new Error("API connection failed");
-                
+                const products = await window.xanoAPI.getProducts('home-decor');
+                return products.map(product => ({
+                    id: product.id,
+                    name: product.name,
+                    category: product.category,
+                    price: parseFloat(product.price),
+                    stock: product.stock || 0,
+                    stockStatus: getStockStatus(product.stock || 0),
+                    image: product.image_url || 'https://images.unsplash.com/photo-1586023492125-27a3dcaa17ef?ixlib=rb-4.0.3&auto=format&fit=crop&w=870&q=80'
+                }));
             } catch (error) {
                 console.error('Error fetching products:', error);
-                // Return demo products as fallback
-                return generateDemoProducts();
+                showErrorMessage('Failed to load products. Please refresh the page.');
+                return [];
             }
         };
+        
+        // Helper function to determine stock status
+        function getStockStatus(stock) {
+            if (stock === 0) return 'out-of-stock';
+            if (stock <= 5) return 'low-stock';
+            return 'in-stock';
+        }
+        
+        // Show error message to user
+        function showErrorMessage(message) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #e74c3c;
+                color: white;
+                padding: 15px 20px;
+                border-radius: 5px;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+                z-index: 1000;
+                max-width: 300px;
+            `;
+            notification.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${message}`;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                document.body.removeChild(notification);
+            }, 5000);
+        }
 
         // Cart functionality
         let cart = JSON.parse(localStorage.getItem('cart')) || [];
@@ -293,30 +256,75 @@
         
         // Process payment with Paystack
         function processPayment(orderData) {
+            // First create the order in Xano
+            createOrderInXano(orderData).then(order => {
+                // Store order total for confirmation page
+                localStorage.setItem('lastOrderTotal', orderData.total);
+                // Then process payment
+                processPaystackPayment(orderData, order.id);
+            }).catch(error => {
+                console.error('Error creating order:', error);
+                alert('Failed to create order. Please try again.');
+            });
+        }
+        
+        // Create order in Xano
+        async function createOrderInXano(orderData) {
+            const orderPayload = {
+                customer_name: orderData.name,
+                customer_email: orderData.email,
+                customer_phone: orderData.phone,
+                delivery_address: orderData.address,
+                items: orderData.items.map(item => ({
+                    product_id: item.id,
+                    quantity: item.quantity,
+                    price: item.price
+                })),
+                total_amount: orderData.total,
+                payment_status: 'pending',
+                order_status: 'pending'
+            };
+            
+            return await window.xanoAPI.createOrder(orderPayload);
+        }
+        
+        // Process Paystack payment
+        function processPaystackPayment(orderData, orderId) {
             const handler = PaystackPop.setup({
                 key: PAYSTACK_PUBLIC_KEY,
                 email: orderData.email,
-                amount: orderData.total * 100, // Convert to kobo
+                amount: Math.round(orderData.total * 100), // Convert to kobo
                 currency: 'NGN',
-                ref: 'ELG-' + Math.floor((Math.random() * 1000000000) + 1), // Generate a random reference
-                callback: function(response) {
+                ref: `ELG-${orderId}-${Date.now()}`, // Use order ID in reference
+                callback: async function(response) {
                     // Payment successful
                     console.log('Payment successful!', response);
                     
-                    // Save order to local storage
-                    saveOrderToStorage(orderData, response.reference);
-                    
-                    // Send order email
-                    sendOrderEmail(orderData);
-                    
-                    // Show confirmation
-                    document.getElementById('checkout-form').style.display = 'none';
-                    document.getElementById('order-confirmation').style.display = 'block';
-                    
-                    // Clear cart
-                    cart = [];
-                    localStorage.removeItem('cart');
-                    updateCartCount();
+                    try {
+                        // Verify payment with Xano
+                        await window.xanoAPI.verifyPayment({
+                            reference: response.reference,
+                            order_id: orderId
+                        });
+                        
+                        // Save order to local storage for reference
+                        saveOrderToStorage(orderData, response.reference);
+                        
+                        // Send order email
+                        sendOrderEmail(orderData);
+                        
+                        // Clear cart
+                        cart = [];
+                        localStorage.removeItem('cart');
+                        updateCartCount();
+                        
+                        // Redirect to confirmation page
+                        window.location.href = `/html/order-confirmation.html?ref=${response.reference}`;
+                        
+                    } catch (error) {
+                        console.error('Payment verification failed:', error);
+                        alert('Payment verification failed. Please contact support with reference: ' + response.reference);
+                    }
                 },
                 onClose: function() {
                     // User closed the payment window

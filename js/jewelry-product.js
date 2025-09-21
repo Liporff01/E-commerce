@@ -1,12 +1,5 @@
-        // API endpoints (replace with your actual backend endpoints)
-        const API_ENDPOINTS = {
-            PRODUCTS: '/api/products',
-            CATEGORIES: '/api/categories',
-            INVENTORY: '/api/inventory'
-        };
-
         // Paystack public key (replace with your live key)
-        const PAYSTACK_PUBLIC_KEY = 'pk_test_71d220e5fd848c18440c04f724fbb94d8716cd98';
+        const PAYSTACK_PUBLIC_KEY = 'pk_live_your_live_public_key_here'; // Replace with your actual key
 
         // EmailJS configuration (replace with your actual credentials)
         const EMAILJS_CONFIG = {
@@ -15,87 +8,57 @@
             USER_ID: 'your_user_id'
         };
 
-        // Generate demo products with stock information
-        const generateDemoProducts = () => {
-            const products = [];
-            const categories = ["necklaces", "earrings", "rings", "bracelets"];
-            const materials = ["Gold", "Silver", "Rose Gold", "Platinum"];
-            const adjectives = ["Elegant", "Delicate", "Vintage", "Modern", "Chic", "Luxury", "Minimalist", "Statement", "Artisan", "Handcrafted"];
-            const types = ["Chain", "Pendant", "Hoop", "Stud", "Band", "Cuff", "Bangle", "Charm", "Pearl", "Crystal"];
-            
-            // Preload more unique jewelry images from Unsplash
-            const imageUrls = [
-                "https://images.unsplash.com/photo-1605100804763-247f67b3557e",
-                "https://images.unsplash.com/photo-1515562141207-7a88fb7ad5e5",
-                "https://images.unsplash.com/photo-1611591437281-460bfbe1220a",
-                "https://images.unsplash.com/photo-1611598892860-ebd89e1404c0",
-                "https://images.unsplash.com/photo-1596944940736-2ef5ce4432f2",
-                "https://images.unsplash.com/photo-1602751584553-61aac93849d6",
-                "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908",
-                "https://images.unsplash.com/photo-1551649001-7a2482d98d09",
-                "https://images.unsplash.com/photo-1512917774080-9991f1c4c750",
-                "https://images.unsplash.com/photo-1506634572416-48cdfe530110",
-                "https://images.unsplash.com/photo-1544376664-80b17f09d399",
-                "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908",
-                "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f",
-                "https://images.unsplash.com/photo-1596944940736-2ef5ce4432f2",
-                "https://images.unsplash.com/photo-1611591437281-460bfbe1220a",
-                "https://images.unsplash.com/photo-1605100804763-247f67b3557e",
-                "https://images.unsplash.com/photo-1515562141207-7a88fb7ad5e5",
-                "https://images.unsplash.com/photo-1611598892860-ebd89e1404c0",
-                "https://images.unsplash.com/photo-1602751584553-61aac93849d6",
-                "https://images.unsplash.com/photo-1551649001-7a2482d98d09"
-            ];
-            
-            // Generate 1000 products with stock information
-            for (let i = 1; i <= 1000; i++) {
-                const category = categories[Math.floor(Math.random() * categories.length)];
-                const material = materials[Math.floor(Math.random() * materials.length)];
-                const adjective = adjectives[Math.floor(Math.random() * adjectives.length)];
-                const type = types[Math.floor(Math.random() * types.length)];
-                const price = (Math.floor(Math.random() * 1000) + 20).toFixed(2);
-                const imageIndex = Math.floor(Math.random() * imageUrls.length);
-                
-                // Generate random stock quantity (0-50)
-                const stockQuantity = Math.floor(Math.random() * 51);
-                let stockStatus = 'in-stock';
-                
-                if (stockQuantity === 0) {
-                    stockStatus = 'out-of-stock';
-                } else if (stockQuantity <= 5) {
-                    stockStatus = 'low-stock';
-                }
-                
-                products.push({
-                    id: i,
-                    name: `${adjective} ${material} ${category === "necklaces" ? "Necklace" : 
-                          category === "earrings" ? "Earrings" : 
-                          category === "rings" ? "Ring" : "Bracelet"}`,
-                    category: category,
-                    price: parseFloat(price),
-                    stock: stockQuantity,
-                    stockStatus: stockStatus,
-                    image: `${imageUrls[imageIndex]}?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwa90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=870&q=80`
-                });
-            }
-            
-            return products;
-        };
 
-        // Fetch products from API or use demo data as fallback
+        // Fetch products from Xano API
         async function fetchProducts() {
             try {
-                // Try to fetch from API
-                const response = await fetch(API_ENDPOINTS.PRODUCTS);
-                if (response.ok) {
-                    return await response.json();
-                }
-                throw new Error('API not available');
+                const products = await window.xanoAPI.getProducts('jewelry');
+                return products.map(product => ({
+                    id: product.id,
+                    name: product.name,
+                    category: product.category,
+                    price: parseFloat(product.price),
+                    stock: product.stock || 0,
+                    stockStatus: getStockStatus(product.stock || 0),
+                    image: product.image_url || 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?ixlib=rb-4.0.3&auto=format&fit=crop&w=870&q=80'
+                }));
             } catch (error) {
-                console.log('Using demo products:', error);
-                // Fall back to demo products if API is not available
-                return generateDemoProducts();
+                console.error('Error fetching products:', error);
+                // Show error message to user
+                showErrorMessage('Failed to load products. Please refresh the page.');
+                return [];
             }
+        }
+        
+        // Helper function to determine stock status
+        function getStockStatus(stock) {
+            if (stock === 0) return 'out-of-stock';
+            if (stock <= 5) return 'low-stock';
+            return 'in-stock';
+        }
+        
+        // Show error message to user
+        function showErrorMessage(message) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #e74c3c;
+                color: white;
+                padding: 15px 20px;
+                border-radius: 5px;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+                z-index: 1000;
+                max-width: 300px;
+            `;
+            notification.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${message}`;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                document.body.removeChild(notification);
+            }, 5000);
         }
 
         // Cart functionality
@@ -313,30 +276,75 @@
         
         // Process payment with Paystack
         function processPayment(orderData) {
+            // First create the order in Xano
+            createOrderInXano(orderData).then(order => {
+                // Then process payment
+                processPaystackPayment(orderData, order.id);
+            }).catch(error => {
+                console.error('Error creating order:', error);
+                alert('Failed to create order. Please try again.');
+            });
+        }
+        
+        // Create order in Xano
+        async function createOrderInXano(orderData) {
+            const orderPayload = {
+                customer_name: orderData.name,
+                customer_email: orderData.email,
+                customer_phone: orderData.phone,
+                customer_whatsapp: orderData.whatsapp,
+                delivery_address: orderData.address,
+                items: orderData.items.map(item => ({
+                    product_id: item.id,
+                    quantity: item.quantity,
+                    price: item.price
+                })),
+                total_amount: orderData.total,
+                payment_status: 'pending',
+                order_status: 'pending'
+            };
+            
+            return await window.xanoAPI.createOrder(orderPayload);
+        }
+        
+        // Process Paystack payment
+        function processPaystackPayment(orderData, orderId) {
             const handler = PaystackPop.setup({
                 key: PAYSTACK_PUBLIC_KEY,
                 email: orderData.email,
-                amount: orderData.total * 100, // Convert to kobo
+                amount: Math.round(orderData.total * 100), // Convert to kobo
                 currency: 'NGN',
-                ref: 'ELG-' + Math.floor((Math.random() * 1000000000) + 1), // Generate a random reference
-                callback: function(response) {
+                ref: `ELG-${orderId}-${Date.now()}`, // Use order ID in reference
+                callback: async function(response) {
                     // Payment successful
                     console.log('Payment successful!', response);
                     
-                    // Save order to local storage
-                    saveOrderToStorage(orderData, response.reference);
-                    
-                    // Send order email
-                    sendOrderEmail(orderData);
-                    
-                    // Show success message
-                    document.getElementById('order-success').classList.add('active');
-                    document.getElementById('modal-overlay').classList.add('active');
-                    
-                    // Clear cart
-                    cart = [];
-                    localStorage.removeItem('cart');
-                    updateCartCount();
+                    try {
+                        // Verify payment with Xano
+                        await window.xanoAPI.verifyPayment({
+                            reference: response.reference,
+                            order_id: orderId
+                        });
+                        
+                        // Save order to local storage for reference
+                        saveOrderToStorage(orderData, response.reference);
+                        
+                        // Send order email
+                        sendOrderEmail(orderData);
+                        
+                        // Show success message
+                        document.getElementById('order-success').classList.add('active');
+                        document.getElementById('modal-overlay').classList.add('active');
+                        
+                        // Clear cart
+                        cart = [];
+                        localStorage.removeItem('cart');
+                        updateCartCount();
+                        
+                    } catch (error) {
+                        console.error('Payment verification failed:', error);
+                        alert('Payment verification failed. Please contact support with reference: ' + response.reference);
+                    }
                 },
                 onClose: function() {
                     // User closed the payment window
